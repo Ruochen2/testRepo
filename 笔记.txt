@@ -1,0 +1,185 @@
+数据库基本知识
+
+MySQL支持的数据类型
+数值类型、日期类型、字符串类型
+整数类型字段常见的属性设置：
+（1）unsigned 无符号
+（2）auto_increment 
+	自增（默认从1开始），用于整数类型和带索引的字段，配合主键和其他类型的索引使用
+	
+	
+（3）主键 唯一标识某条记录的一个字段或者多个字段
+	设置方法：在创建表的时候
+	primary key(字段) eg. create table t5(id int,name int,primary key(id));
+	primary key(字段1，字段2)
+	也可以直接写在需要创建主键的字段后面 eg.  create table t6 (id int primary key,name int);
+	如果忘了设置可以 alter table 表名 add primary key(字段名)；
+	删除 alter table 表名 drop primary key; 注意！如果字段具有auto_increment属性必须先删除auto_increment
+
+
+
+SQL语句
+（1）DDL(Data Definition Languages) 语句
+数据定义语句，通过这类语言可以对数据库进行创建删除更改。更多是由数据库管理员DBA使用
+查看当前多少数据库 show databases;
+	1）创建数据库
+		1>create database 数据库名；
+		2>选择要操作的数据库：use 数据库名；
+		3>查看数据库中所有的数据表 show tables;
+	2）删除数据库
+	drop database 数据库名；
+	3）创建表（要先use 数据库；再创建）
+		1>create table 表名（
+		字段1名  字段1类型  列的约束条件，
+		字段2名  字段2类型  列的约束条件
+		）
+		2>查看表的定义 desc 表名；
+		3>查看创建表的SQL语句 show create table 表名\G
+	4）删除表
+	drop table 表名；
+	5）修改表
+		1>修改表的字段类型
+		alter table 表名 modify 字段名 字段类型/定义; eg. alter table t1 modify id1 tinyint;
+
+		2>增加表字段
+		alter table 表名 add 字段名 定义; eg. alter table t1 add id3 int;
+		3>删除表字段
+		alter table 表名 drop 字段名;
+		4>字段改名
+		alter table 表名 change 旧字段名 新字段名 字段类型；eg. alter table t1  change id2 id22 int; 注意这里也可以改数据类型
+		5>修改字段的排列排序
+		alter table 表名 modify 字段名 字段类型 first/after; eg. alter table t1 modify id2 int first;
+		直接放到某字段后面 eg.  alter table t1 modify id2 int after id1;
+		6>更改表名
+		alter table 表名 rename [to] 新表名;
+
+（2）DML(Data Manipulation Language) 语句
+数据操纵语句，用于增删改查数据库记录并检查数据完整性。开发人员使用最多的语句。
+	1）插入语句
+		1>插入单条记录
+		insert into 表名 (字段1，字段2，字段3)  values(值1，值2，值3)；
+		也可以不用指定字段名，但values后面的顺序应该和字段的排序一致
+		2>插入多条记录
+		insert into 表名（字段1，字段2，字段3）
+		values
+		(值1，值2，值3)，
+		(值1，值2，值3)，
+		(值1，值2，值3)；
+	2）更新记录
+		1>更新一个表
+		update 表名 set 字段1=值1，字段2=值2 [where 条件]；eg. update t1 set age=60 where id=6;
+		2>更新多个表中的数据
+		update 表1,表2,表3  set  表1.字段1=表达式1，表2.字段2=表达式2 [where条件]；
+		注：多表更新多用在根据一个表的字段来动态地更新另一个表的字段
+	3）删除记录
+		1>删除单表中的数据
+		delete from 表名 [where 条件]；
+		2>删除多个表中的数据
+		delete 表1，表2 from 表1，表2 [where 条件]；
+		无论是单表还是多表，不加where条件会把表中的所有记录删除
+	4）查询记录
+	select  字段名|*  from 表名 [where 条件]；
+		1>查询不重复的记录
+		select distinct field1,field2 from 表名
+		eg. select distinct id,name from employee;
+		只要field1,field2任何一个字段有不同就会被选择
+		一般使用distinct，只筛选一个字段
+		2>条件查询
+		注：条件字段比较符号：=,<,>,>=,<=,!=等比较运算符，多个条件之间可以使用or, and等
+		select * from 表名 where 条件
+		3>排序和限制
+		排序：select * from 表名 where 条件 order by field asc由低到高|desc由高到低
+		多个字段排序: eg. select * from employee order by salary desc, id desc; 
+		限制：对于排序后的数据如果只希望显示一部分，可以使用limit start,row来限制
+		在语句的最后面 加上Limit 数字,数字来进行查询数量的限制
+		eg. select * from employee order by salary desc limit 3,1从第三条开始取一条，注意是从0开始
+		4>聚合
+		很多时候需要进行一些汇总操作，需要使用到聚合操作
+		sum求和: select sum(字段名) from 表名；eg. select sum(salary) from employee;
+		count记录总数：count (*|字段名) from 表名；
+		max最大值：select max(字段名) from 表名；
+		min最小值：select min(字段名)from 表名；
+		group by分类聚合：eg. 分部门统计工资和：select [department] sum(salary) from employee group by department;
+		with rollup: 对分类聚合后的结果进行再汇总 eg. select sum(salary) from employee group by department with rollup;
+		having: 对分类结果进行条件过滤，而where是在聚合前就对记录进行过滤，slect sum(salary) from employee group by department having sum(salary)>800; 将工资和大于800的部门筛选出 
+		5>表连接
+		需求：显示多个表中的字段的时候即可使用表连接
+		内连接：选取两张表中相互匹配的记录 
+		              eg. select *|t1.id,t2.record  from t1,t2 where t1.id=t2.id;
+		              select语句可以给字段起别名，eg. select t1.id a from t1; 直接写在字段后面
+		              也可以给表起别名，eg. select e.id from employee e;
+		外连接：不仅仅选取两张相互匹配的记录，并且会选出其他不匹配的记录
+		              左连接：包含左边表中的所有记录（包括右表中没有和它相匹配的记录）
+			            select field1,field2 from t1 left join t2 on t1.id=t2.id;
+		              右连接：包含右边表中的所有记录
+		6>子查询
+		需求：一个查询需要另一个查询的结果参与的时候
+		用于子查询的关键字：
+		in:  select * from t1 where id in(select eid from t2);
+		注意：in后面的子语句必须只返回一个字段，若查询结果唯一（只有一条），可以试用=代替in
+		not in:  与in相反
+		exists:  select 语句 from employee where exists(select 语句)；
+		后面那个自语句有没有查询出记录来，如果查询出记录返回true，否则false，并且查询出的记录的值为null也无所谓，也返回true
+		not exists与exists相反
+		7>记录联合
+		将多个表的数据按照一定条件查询出来后将结果合并到一起展示
+		将多个select语句用union或者union all隔开即可实现
+		区别：union将多个查询结果合并后并进行去重复后返回，union all直接合并不去重
+		联合的条件：查询的列个数要相等（可以通过挑选几个字段实现列个数一致）		
+
+（3）DCL（Data Control Language）语句
+数据控制语句，通过此类语句可以对数据库的相关权限进行设置。一般由DBA使用。
+
+
+
+在php中使用mysqli与MySQL交互
+（1）建立、关闭与MySQL服务器的连接
+	1）连接指定的mysql服务器
+	$mysql_connect=mysqli_connect($host, $user, $password, $database, $port); 或者$link=@=mysqli_connect... 加个报错屏蔽符号
+	2）连接错误时的提示
+	int mysqli_connect_errno(); //返回最后一次连接调用的错误代码
+	string mysqli_connect_error(); //返回一个字符串描述的最后一次连接调用的错误代码
+	3）设置默认字符编码
+	bool mysqli_set_charset(mysqli $link, string $charset);
+	4）选择特定的数据库
+	bool mysqli_select_db(mysqli $link, string $dbname);
+	5）关闭与mysql服务器的连接
+	bool mysqli_close(mysqli $link);
+（2）执行SQL语句
+	1）对数据库执行一条SQL语句
+		1>$result = mysqli_query($link数据库连接对象，‘sql语句');  eg. $query='select * from t1;';  $result=mysqli_query($link, $query);
+		ps.对于insert,update,delete等不会返回数据的sql语句，在执行没有错误时将返回true
+		     对于返回数据的sql语句，执行成功的时候会返回结果集对象，可以通过使用结果集对象的函数来从中获取数据
+	2）操作结果集对象的函数
+		1>从结果集对象中解析数据的常见函数
+			1. 以索引数组的方式获取一条记录的数据
+			mixed mysqli_fetch_row( mysqli_result $result结果集对象);  eg. $data=mysqli_fetch_row($result); 重复使用以获取下一条记录的数据
+			2. 以关联数组的方式获取一条记录的数据
+			array mysqli_fetch_assoc( mysqli_result $result);  重复使用以获取下一条记录的数据
+			3. 以索引数组或关联数组的方式获取一条记录的数据
+			第二个参数（可不填）可选值：MYSQLI_ASSOC, MYSQLI_NUM, MYSQLI_BOTH(默认)
+			mixed mysqli_fetch_array( $result, MYSQLI_NUM);
+			4. 以索引数组或关联数组的方式获取全部记录的数据
+			第二个参数（可不填）可选值：MYSQLI_ASSOC, MYSQLI_NUM, MYSQLI_BOTH(默认)
+			mixed mysqli_fetch_all( $result, MYSQLI_BOTH);
+			5. 返回结果集中的下一个字段信息
+			$field = mysqli_fetch_field($result);  重复使用获取下一个字段
+			6. 返回一个代表结果集字段的对象数组
+			array mysqli_fetch_fields($result);
+			7. 获取结果集中行的数量
+			int mysqli_num_rows($result)
+		2>释放与结果集相关的内存
+		mysqli_free_result($result);
+	3）其他常用函数
+	4）一次性执行多条SQL语句，多个SQL语句用分号隔开
+		bool mysqli_multi_query(mysqli $link, string $query);
+		如果执行的每条SQL语句都会返回一个结果，想要回去每一个结果集对象的操作：
+		
+
+
+
+
+
+
+
+	
